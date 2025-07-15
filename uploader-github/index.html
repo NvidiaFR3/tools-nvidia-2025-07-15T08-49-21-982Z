@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>GitHub ZIP Uploader | FR3</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f111a;
+      --text: #e0e0e0;
+      --card: #181b2a;
+      --accent: #00ffff;
+      --border: #333;
+    }
+
+    body.light {
+      --bg: #f5f5f5;
+      --text: #111;
+      --card: #ffffff;
+      --accent: #007bff;
+      --border: #ccc;
+    }
+
+    * {
+      font-family: 'Poppins', sans-serif;
+      box-sizing: border-box;
+      transition: color 0.3s, background 0.3s;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .transition-overlay {
+      position: absolute;
+      top: -100%;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--accent);
+      z-index: 999;
+      pointer-events: none;
+      transition: top 0.5s ease-in-out;
+    }
+
+    .transition-overlay.active {
+      top: 0;
+    }
+
+    .card {
+      background: var(--card);
+      width: 100%;
+      max-width: 500px;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px var(--accent);
+      border: 1px solid var(--border);
+      z-index: 2;
+    }
+
+    h2 {
+      margin-top: 0;
+      text-align: center;
+      color: var(--accent);
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text);
+    }
+
+    input::placeholder {
+      color: #999;
+    }
+
+    pre {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 10px;
+      margin-top: 15px;
+      border-radius: 6px;
+      color: var(--text);
+      max-height: 300px;
+      overflow: auto;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .theme-toggle {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background: var(--card);
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.4s ease, background 0.3s;
+      z-index: 3;
+    }
+
+    .theme-toggle svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--accent);
+      transition: transform 0.3s;
+    }
+
+    .theme-toggle:hover {
+      transform: rotate(30deg);
+    }
+  </style>
+</head>
+<body>
+  <div class="transition-overlay" id="overlay"></div>
+
+  <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">
+    <!-- Matahari default (dark mode aktif) -->
+    <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.8 1.42-1.42zm10.45 10.45l1.79 1.8 1.41-1.42-1.8-1.79-1.4 1.41zM12 4V1h-1v3h1zm0 19v-3h-1v3h1zm8.66-10h3v-1h-3v1zM1 12h3v-1H1v1zm2.05 7.03l1.41 1.41 1.8-1.79-1.42-1.41-1.79 1.79zm14.85 0l1.79-1.79-1.41-1.41-1.8 1.79 1.42 1.41zM12 6a6 6 0 100 12A6 6 0 0012 6z"/>
+    </svg>
+  </button>
+
+  <div class="card">
+    <h2>Uploader GitHub</h2>
+    <input type="text" id="username" placeholder="GitHub Username" />
+    <input type="text" id="repo" placeholder="Repository Name" />
+    <input type="text" id="token" placeholder="GitHub Token (ghp_...)" />
+    <button onclick="document.getElementById('zipInput').click()">📂Pilih ZIP File</button>
+    <input type="file" id="zipInput" accept=".zip" class="hidden" />
+    <pre id="result">Menunggu file ZIP...</pre>
+  </div>
+
+<script>
+  const resultBox = document.getElementById("result");
+  const zipInput = document.getElementById("zipInput");
+  const overlay = document.getElementById("overlay");
+  const themeIcon = document.getElementById("themeIcon");
+
+  function getGithubInfo() {
+    const baseRepo = document.getElementById("repo").value.trim();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    return {
+      username: document.getElementById("username").value.trim(),
+      repo: `${baseRepo}-${timestamp}`,
+      token: document.getElementById("token").value.trim(),
+    };
+  }
+
+  async function createNewRepo(repoName, token) {
+    const payload = {
+      name: repoName,
+      description: "Created by FR3 Developer",
+      auto_init: true,
+      private: false
+    };
+
+    const res = await fetch(`https://api.github.com/user/repos`, {
+      method: "POST",
+      headers: {
+        "Authorization": `token ${token}`,
+        "Content-Type": "application/json",
+        "User-Agent": "FR3-DEV"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const json = await res.json();
+    if (res.status >= 400) throw new Error(`Gagal membuat repo: ${json.message}`);
+    return json;
+  }
+
+  async function handleZipFile(file) {
+    const { username, repo, token } = getGithubInfo();
+    if (!username || !repo || !token) {
+      return alert("Isi dulu GitHub Username, Repository, dan Token!");
+    }
+
+    if (!file || !file.name.endsWith(".zip")) {
+      return alert("Masukkan file ZIP, bukan file lain!");
+    }
+
+    try {
+      resultBox.textContent = "Membuat repository baru...";
+      await createNewRepo(repo, token);
+
+      resultBox.textContent = "Extracting ZIP...";
+      const zip = await JSZip.loadAsync(file);
+      const entries = Object.keys(zip.files);
+      const uploaded = [];
+
+      for (const path of entries) {
+        const zipEntry = zip.files[path];
+        if (zipEntry.dir) continue;
+
+        const content = await zipEntry.async("base64");
+        const githubAPI = `https://api.github.com/repos/${username}/${repo}/contents/${encodeURIComponent(path)}`;
+        const payload = {
+          message: `Add ${path}`,
+          content: content
+        };
+
+        const res = await fetch(githubAPI, {
+          method: "PUT",
+          headers: {
+            "Authorization": `token ${token}`,
+            "Content-Type": "application/json",
+            "User-Agent": "FR3-DEV"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+        uploaded.push({ file: path, status: res.status, response: json });
+        resultBox.textContent = `Uploaded: ${path}`;
+      }
+
+      resultBox.textContent = `✅ Upload selesai ke repo baru **${repo}**\n` + JSON.stringify(uploaded, null, 2);
+    } catch (err) {
+      resultBox.textContent = `❌ Error: ${err.message}`;
+    }
+  }
+
+  zipInput.addEventListener("change", () => {
+    const file = zipInput.files[0];
+    handleZipFile(file);
+  });
+
+  function toggleTheme() {
+    overlay.classList.add("active");
+    setTimeout(() => {
+      document.body.classList.toggle("light");
+      const isLight = document.body.classList.contains("light");
+      themeIcon.innerHTML = isLight
+        ? `<path d="M12 2a9.934 9.934 0 00-7.071 2.929 9.934 9.934 0 000 14.142A9.934 9.934 0 0012 22a9.934 9.934 0 007.071-2.929A9.934 9.934 0 0022 12a9.934 9.934 0 00-2.929-7.071A9.934 9.934 0 0012 2z"/>`
+        : `<path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.8 1.42-1.42zm10.45 10.45l1.79 1.8 1.41-1.42-1.8-1.79-1.4 1.41zM12 4V1h-1v3h1zm0 19v-3h-1v3h1zm8.66-10h3v-1h-3v1zM1 12h3v-1H1v1zm2.05 7.03l1.41 1.41 1.8-1.79-1.42-1.41-1.79 1.79zm14.85 0l1.79-1.79-1.41-1.41-1.8 1.79 1.42 1.41zM12 6a6 6 0 100 12A6 6 0 0012 6z"/>`;
+      setTimeout(() => overlay.classList.remove("active"), 400);
+    }, 200);
+  }
+</script>
+</body>
+</html>
