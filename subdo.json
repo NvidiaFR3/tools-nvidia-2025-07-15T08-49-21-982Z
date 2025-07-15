@@ -1,0 +1,24 @@
+{
+  "domains": [
+    {
+      "name": "fr3serv.my.id",
+      "zone_id": "65a88f5deee3629dcf7ca40493a06f22",
+      "token": "vP0oD4FGJBpHvDKZGZFIq0Cb2fRcGV5RppLcvug5"
+    },
+    {
+      "name": "tokopanelmurah.biz.id",
+      "zone_id": "a08b53cf7ce5f763e58b395eb3889bca",
+      "token": "3KG8jYVrZq31l-rrmpYDMayHDJn2KUEcLQK9UVQC"
+    },
+    {
+      "name": "nvidia-website.biz.id",
+      "zone_id": "3d050987222ebcd4dd4c11bac68ef64c",
+      "token": "rSfrsqURArt7Uh5VsjgXtSTEllBttOHVbCFyIkZw"
+    },
+    {
+      "name": "nvidia-website.my.id",
+      "zone_id": "14aa61bee87458ad3fd18e93e53b986c",
+      "token": "Nq4DilWJzgZGCiDjQMKwUbhLlfE7Lpwqj3yyb9rr"
+    }
+  ]
+}
